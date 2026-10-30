@@ -12,15 +12,33 @@ on:
 jobs:
   test:
     name: ${{ inputs.mode == 'int' && 'Integration Tests' || 'Unit Tests' }}
+    timeout-minutes: 30
     runs-on:
       - nscloud-ubuntu-22.04-amd64-4x8-with-cache
       - nscloud-cache-size-50gb
       - nscloud-cache-tag-atomi-nix-store-cache
     steps:
+      - uses: ProtoDurian/actions.test-report@2b155404dd72a0e2877aec0c543ec0d475ec1f39 # v1.0.0
+        continue-on-error: true
+        with:
+          mode: start
+          flag: ${{ inputs.mode }}
+          language: bun
+          timeout-minutes: 30
       - uses: AtomiCloud/actions.setup-nix@v3
       - uses: AtomiCloud/actions.cache-bun@v1
       - name: Run ${{ inputs.mode }} tests
+        id: test
         run: nix develop .#ci -c ./scripts/ci/test.sh ${{ inputs.mode }}
+      - uses: ProtoDurian/actions.test-report@2b155404dd72a0e2877aec0c543ec0d475ec1f39 # v1.0.0
+        if: always()
+        continue-on-error: true
+        with:
+          mode: finish
+          flag: ${{ inputs.mode }}
+          language: bun
+          test-outcome: ${{ steps.test.outcome }}
+          job-status: ${{ job.status }}
       - name: Upload ${{ inputs.mode }} coverage artifact
         if: always()
         uses: actions/upload-artifact@v7

@@ -21,11 +21,12 @@ CONFIG="bunfig.${MODE}.toml"
 COVERAGE_DIR="coverage/${MODE}"
 
 echo "🧪 Running ${MODE} tests with coverage..."
-rm -rf "${COVERAGE_DIR}"
+rm -rf "${COVERAGE_DIR}" "reports/${MODE}"
+mkdir -p "reports/${MODE}"
 
 set +e
-bun test --config="${CONFIG}" --coverage
-test_status=$?
+bun test --config="${CONFIG}" --coverage --reporter=junit --reporter-outfile="reports/${MODE}/junit.xml" 2>&1 | tee "reports/${MODE}/console.log"
+test_status=${PIPESTATUS[0]}
 set -e
 
 [[ ! -f ${COVERAGE_DIR}/lcov.info ]] && echo "❌ No coverage artifact found at ${COVERAGE_DIR}/lcov.info" >&2 && exit 1
